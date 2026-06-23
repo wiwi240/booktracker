@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import booksData from "./data/books.json";
+import "./data/booksRaw";
+
+const booksData = JSON.parse(globalThis.BOOKS_RAW_JSON);
 
 function normalizeBooks(data) {
   const rawBooks = Array.isArray(data?.books?.[0]) ? data.books[0] : data?.books ?? [];
@@ -15,14 +17,16 @@ function getDescription(book) {
   return book.shortDescription || book.longDescription || "Aucune description disponible.";
 }
 
-function BookCard({ book, onToggleFavorite, onToggleRead }) {
+function BookCard({ book, onOpenPreview, onToggleFavorite, onToggleRead }) {
   return (
     <article className="book-card">
-      <img
-        className="book-cover"
-        src={book.thumbnailUrl}
-        alt={`Couverture du livre ${book.title}`}
-      />
+      <button className="book-cover-button" type="button" onClick={() => onOpenPreview(book)}>
+        <img
+          className="book-cover"
+          src={book.thumbnailUrl}
+          alt={`Couverture du livre ${book.title}`}
+        />
+      </button>
 
       <div className="book-content">
         <div className="book-meta">
@@ -60,6 +64,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showReadOnly, setShowReadOnly] = useState(false);
+  const [previewBook, setPreviewBook] = useState(null);
 
   const favoriteBooks = books.filter((book) => book.isFav);
   const readingListBooks = books.filter((book) => book.read);
@@ -155,6 +160,7 @@ export default function App() {
             <BookCard
               key={book.isbn}
               book={book}
+              onOpenPreview={(selectedBook) => setPreviewBook(selectedBook)}
               onToggleFavorite={(isbn) => toggleField(isbn, "isFav")}
               onToggleRead={(isbn) => toggleField(isbn, "read")}
             />
@@ -202,6 +208,38 @@ export default function App() {
           )}
         </div>
       </section>
+
+      {previewBook ? (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="preview-title"
+          onClick={() => setPreviewBook(null)}
+        >
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <button
+              className="modal-close"
+              type="button"
+              aria-label="Fermer l'aperçu"
+              onClick={() => setPreviewBook(null)}
+            >
+              ×
+            </button>
+
+            <img
+              className="modal-image"
+              src={previewBook.thumbnailUrl}
+              alt={`Couverture du livre ${previewBook.title}`}
+            />
+
+            <div className="modal-content">
+              <h2 id="preview-title">{previewBook.title}</h2>
+              <p>{getDescription(previewBook)}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
